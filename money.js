@@ -114,7 +114,3 @@ addBtn.addEventListener('click', () => {
     dateInput.value = '';
 });
 
-// Initialize
-loadExpenses();
-renderExpenses();
-// ...existing code...
