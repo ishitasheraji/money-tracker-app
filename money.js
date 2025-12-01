@@ -1,116 +1,127 @@
-// Simple and easy-to-follow expense tracker JS
-
-// ...existing code...
-let expenses = []; // list of {id, category, amount, date}
+let expenses = []; // list of {id, category, amount, date, note}
 
 const categorySelect = document.getElementById('category-select');
+const customCategoryBtn = document.getElementById('custom-category-btn');
+const customCategoryInput = document.getElementById('custom-category-input');
 const amountInput = document.getElementById('amount-input');
 const dateInput = document.getElementById('date-input');
+const noteInput = document.getElementById('note-input');
 const addBtn = document.getElementById('add-btn');
 const expenseTableBody = document.getElementById('expense-table-body');
 const totalAmountCell = document.getElementById('total-amount');
 
 // Load from localStorage if available
 function loadExpenses() {
-    const raw = localStorage.getItem('expenses');
-    if (raw) {
-        try {
-            expenses = JSON.parse(raw);
-        } catch {
-            expenses = [];
-        }
+  const raw = localStorage.getItem('expenses');
+  if (raw) {
+    try {
+      expenses = JSON.parse(raw);
+    } catch {
+      expenses = [];
     }
+  }
 }
 
 // Save to localStorage
 function saveExpenses() {
-    localStorage.setItem('expenses', JSON.stringify(expenses));
+  localStorage.setItem('expenses', JSON.stringify(expenses));
 }
 
 // Simple currency formatting
 function formatCurrency(value) {
-    return Number(value).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+  return Number(value).toLocaleString(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2
+  });
 }
 
 // Add an expense
-function addExpense(category, amount, date) {
-    const id = Date.now();
-    expenses.push({ id, category, amount: Number(amount), date });
-    saveExpenses();
-    renderExpenses();
+function addExpense(category, amount, date, note) {
+  const id = Date.now();
+  expenses.push({ id, category, amount: Number(amount), date, note });
+  saveExpenses();
+  renderExpenses();
 }
 
 // Delete an expense by id
 function deleteExpense(id) {
-    expenses = expenses.filter(e => e.id !== id);
-    saveExpenses();
-    renderExpenses();
+  expenses = expenses.filter(e => e.id !== id);
+  saveExpenses();
+  renderExpenses();
 }
 
 // Render table and total
 function renderExpenses() {
-    expenseTableBody.innerHTML = '';
-    let totalAmount = 0;
+  expenseTableBody.innerHTML = '';
+  let totalAmount = 0;
 
-    for (const exp of expenses) {
-        totalAmount += exp.amount;
+  for (const exp of expenses) {
+    totalAmount += exp.amount;
 
-        const row = document.createElement('tr');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${exp.category}</td>
+      <td>${formatCurrency(exp.amount)}</td>
+      <td>${exp.date}</td>
+      <td>${exp.note || ''}</td>
+      <td><button class="delete-btn">Delete</button></td>
+    `;
 
-        const catCell = document.createElement('td');
-        catCell.textContent = exp.category;
-        row.appendChild(catCell);
+    row.querySelector('.delete-btn').addEventListener('click', () => {
+      if (confirm('Delete this expense?')) {
+        deleteExpense(exp.id);
+      }
+    });
 
-        const amountCell = document.createElement('td');
-        amountCell.textContent = formatCurrency(exp.amount);
-        row.appendChild(amountCell);
+    expenseTableBody.appendChild(row);
+  }
 
-        const dateCell = document.createElement('td');
-        dateCell.textContent = exp.date;
-        row.appendChild(dateCell);
-
-        const delCell = document.createElement('td');
-        const delBtn = document.createElement('button');
-        delBtn.textContent = 'Delete';
-        delBtn.className = 'delete-btn';
-        delBtn.addEventListener('click', () => {
-            if (confirm('Delete this expense?')) {
-                deleteExpense(exp.id);
-            }
-        });
-        delCell.appendChild(delBtn);
-        row.appendChild(delCell);
-
-        expenseTableBody.appendChild(row);
-    }
-
-    totalAmountCell.textContent = formatCurrency(totalAmount);
+  totalAmountCell.textContent = formatCurrency(totalAmount);
 }
+
+// Show custom category input when button clicked
+customCategoryBtn.addEventListener('click', () => {
+  customCategoryInput.style.display = 'inline-block';
+  categorySelect.value = ''; // clear dropdown if using custom
+});
 
 // Add button handler
 addBtn.addEventListener('click', () => {
-    const category = categorySelect.value;
-    const amount = Number(amountInput.value);
-    const date = dateInput.value;
+  let category = categorySelect.value;
+  const amount = Number(amountInput.value);
+  const date = dateInput.value;
+  const note = noteInput.value;
 
-    if (!category) {
-        alert('Please select a category');
-        return;
-    }
-    if (isNaN(amount) || amount <= 0) {
-        alert('Please enter a valid amount');
-        return;
-    }
-    if (!date) {
-        alert('Please choose a date');
-        return;
-    }
+  // If custom category input is visible and filled, use that
+  if (customCategoryInput.style.display !== 'none' && customCategoryInput.value.trim()) {
+    category = customCategoryInput.value.trim();
+  }
 
-    addExpense(category, amount, date);
+  if (!category) {
+    alert('Please select or write a category');
+    return;
+  }
+  if (isNaN(amount) || amount <= 0) {
+    alert('Please enter a valid amount');
+    return;
+  }
+  if (!date) {
+    alert('Please choose a date');
+    return;
+  }
 
-    // clear inputs
-    categorySelect.value = '';
-    amountInput.value = '';
-    dateInput.value = '';
+  addExpense(category, amount, date, note);
+
+  // clear inputs
+  categorySelect.value = '';
+  amountInput.value = '';
+  dateInput.value = '';
+  noteInput.value = '';
+  customCategoryInput.value = '';
+  customCategoryInput.style.display = 'none';
 });
 
+// Initialize
+loadExpenses();
+renderExpenses();
